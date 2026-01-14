@@ -1,0 +1,148 @@
+import { useState } from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
+
+const XP_PER_LEVEL = 100;
+
+const avatarSprites = {
+  Adventurer: "🧍",
+  Warrior: "/sprites/warrior.png",
+  Paladin: "/sprites/paladin.png",
+  Mage: "/sprites/mage.png",
+  Archmage: "/sprites/archmage.png",
+  Monk: "/sprites/monk.png",
+  'Master Monk': "/sprites/master_monk.png",
+  Rogue: "/sprites/rogue.png",
+  Assassin: "/sprites/assassin.png",
+  Archer: "/sprites/archer.png",
+  Sniper: "/sprites/sniper.png",
+  Ranger: "/sprites/ranger.png",
+  Cleric: "/sprites/cleric.png",
+  Priest: "/sprites/priest.png",
+  Bishop: "/sprites/bishop.png",
+  Berserker: "/sprites/berserker.png",
+  'Rage Master': "/sprites/rage_master.png",
+  Alchemist: "/sprites/alchemist.png",
+  Elementalist: "/sprites/elementalist.png",
+  Summoner: "/sprites/summoner.png",
+  Ninja: "/sprites/ninja.png",
+  'Shadow Master': "/sprites/shadow_master.png",
+  Samurai: "/sprites/samurai.png",
+  'Blade Sage': "/sprites/blade_sage.png",
+  Kensei: "/sprites/kensei.png",
+};
+
+const themes = {
+  dark: { bg: 'bg-black', text: 'text-white' },
+  retro: { bg: 'bg-gray-900', text: 'text-green-400' },
+  blue: { bg: 'bg-blue-900', text: 'text-white' },
+};
+
+export default function LifeRPG() {
+  const [xp, setXp] = useState(0);
+  const [level, setLevel] = useState(1);
+  const [playerClass, setPlayerClass] = useState("");
+  const [gold, setGold] = useState(100);
+  const [events, setEvents] = useState([]);
+  const [theme, setTheme] = useState('dark');
+
+  const levelUpSound = new Audio('/sounds/levelup.mp3');
+  const missionSound = new Audio('/sounds/mission.mp3');
+  const eventSound = new Audio('/sounds/event.mp3');
+
+  const gainXp = (amount) => {
+    const total = xp + amount;
+    const newLevel = Math.floor(total / XP_PER_LEVEL) + 1;
+    setXp(total);
+    if (newLevel > level) {
+      setLevel(newLevel);
+      levelUpSound.play();
+    } else {
+      missionSound.play();
+    }
+  };
+
+  const triggerRandomEvent = () => {
+    const eventPool = [
+      { id: 1, description: "Found a hidden treasure!", type: "gold", value: 50 },
+      { id: 2, description: "Discovered an ancient scroll!", type: "xp", value: 100 },
+      { id: 3, description: "Trap sprung! Lost some gold.", type: "gold", value: -30 },
+      { id: 4, description: "Blessing of the gods! XP bonus.", type: "xp", value: 50 },
+    ];
+    const random = eventPool[Math.floor(Math.random() * eventPool.length)];
+    if (random.type === 'gold') setGold(prev => Math.max(0, prev + random.value));
+    if (random.type === 'xp') gainXp(random.value);
+    setEvents(prev => [random, ...prev]);
+    eventSound.play();
+  };
+
+  const changeTheme = (newTheme) => setTheme(newTheme);
+
+  const playerProgress = ((xp % XP_PER_LEVEL) / XP_PER_LEVEL) * 100;
+
+  const classes = Object.keys(avatarSprites);
+
+  if (!playerClass) {
+    return (
+      <div className={`${themes[theme].bg} ${themes[theme].text} min-h-screen font-mono p-6 space-y-6`}>
+        <Card className="border-2 border-white rounded-sm shadow-[2px_2px_0px_#ffffff] p-4">
+          <div className="text-lg font-bold mb-4">Select Your Class</div>
+          <div className="grid grid-cols-3 gap-4">
+            {classes.map(c => (
+              <Button key={c} onClick={() => setPlayerClass(c)} className="flex flex-col items-center border-2 border-white rounded-sm p-2">
+                {avatarSprites[c]?.startsWith('/') ? (
+                  <img src={avatarSprites[c]} alt={c} className="w-16 h-16 mb-1" />
+                ) : (
+                  <div className="text-4xl mb-1">{avatarSprites[c]}</div>
+                )}
+                <span className="text-xs font-bold">{c}</span>
+              </Button>
+            ))}
+          </div>
+        </Card>
+      </div>
+    );
+  }
+
+  return (
+    <div className={`${themes[theme].bg} ${themes[theme].text} min-h-screen font-mono p-6 space-y-6`}>
+      <Card className={`border-2 border-white rounded-sm shadow-[2px_2px_0px_#ffffff]`}>
+        <CardContent className="p-4 space-y-2">
+          <div className="text-lg font-bold">CHARACTER SHEET</div>
+          {avatarSprites[playerClass]?.startsWith('/') ? (
+            <img src={avatarSprites[playerClass]} alt={playerClass} className="w-16 h-16" />
+          ) : (
+            <div className="text-4xl">{avatarSprites[playerClass]}</div>
+          )}
+          <div>Class: {playerClass}</div>
+          <div>Level: {level}</div>
+          <Progress value={playerProgress} className="bg-black border-2 border-white [&>div]:bg-white transition-all duration-500" />
+          <div>XP: {xp}</div>
+          <div>Gold: {gold}</div>
+        </CardContent>
+      </Card>
+
+      <Card className={`border-2 border-white rounded-sm shadow-[2px_2px_0px_#ffffff]`}>
+        <CardContent className="p-4 space-y-2">
+          <div className="text-sm font-bold">THEME CUSTOMIZATION</div>
+          <div className="flex gap-2">
+            {Object.keys(themes).map(t => (
+              <Button key={t} onClick={() => changeTheme(t)} className="border-2 border-white rounded-sm text-xs">{t.toUpperCase()}</Button>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className={`border-2 border-white rounded-sm shadow-[2px_2px_0px_#ffffff]`}>
+        <CardContent className="p-4 space-y-2">
+          <div className="text-sm font-bold">RANDOM EVENTS</div>
+          <Button onClick={triggerRandomEvent} className="border-2 border-white rounded-sm text-xs mb-2">Trigger Random Event</Button>
+          {events.map((e, i) => (
+            <div key={i} className={`text-xs border-2 border-white rounded-sm p-1 mb-1 ${e.value > 0 ? 'text-green-400' : 'text-red-400'}`}>{e.description}</div>
+          ))}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
